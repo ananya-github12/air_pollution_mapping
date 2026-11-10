@@ -3,7 +3,7 @@ import type * as maplibregl from 'maplibre-gl'
 import { motion, useReducedMotion } from 'framer-motion'
 import { CountUp } from '../components/Counter'
 import { CITIES } from '../config/cities'
-import { loadAirToday, loadSources, type SourceShare } from '../lib/data'
+import { DATA_MODE, loadAirToday, loadSources, sourcesAreSample, type SourceShare } from '../lib/data'
 import { SOURCE_LOOK } from '../config/sources'
 import { mean } from '../lib/aqi'
 import SourceTrend from '../components/SourceTrend'
@@ -24,11 +24,14 @@ export default function WhatsInIt({ map, place, firesPassed, onNext }: Props) {
   const [failed, setFailed] = useState(false)
   const [pm25, setPm25] = useState<number | null>(null)
   const [selected, setSelected] = useState<SourceShare | null>(null)
+  // In live mode, the shares are still sample numbers until a real source-apportionment feed exists.
+  const [sampleShares, setSampleShares] = useState(false)
   const city = CITIES[place.city]
 
   useEffect(() => {
     loadSources(place.city).then(setSources, () => setFailed(true))
     loadAirToday(place.city).then((a) => setPm25(Math.round(mean(a.pm25))), () => {})
+    if (DATA_MODE === 'live') sourcesAreSample().then(setSampleShares)
   }, [place.city])
 
   // Settle the camera back over the city, behind the card.
@@ -49,10 +52,15 @@ export default function WhatsInIt({ map, place, firesPassed, onNext }: Props) {
       >
         <p className="text-[11px] uppercase tracking-[0.16em] text-amber-200/70">📍 {placeTitle(place)} · what’s in it</p>
         <h2 className="mt-1.5 text-xl font-semibold leading-snug text-white">What’s in the air {placePhrase(place)}?</h2>
+        {sampleShares && (
+          <p className="mt-2 inline-block rounded-full border border-amber-200/30 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-amber-100/80">
+            Sample shares · real estimates coming
+          </p>
+        )}
         <p className="mt-1 text-xs text-white/55">
           {pm25 !== null && (
             <>
-              Today’s average PM2.5: <span className="font-semibold text-white/85 tabular-nums">{pm25} µg/m³</span>.{' '}
+              Average PM2.5, last 24 h: <span className="font-semibold text-white/85 tabular-nums">{pm25} µg/m³</span>.{' '}
             </>
           )}
           Estimated share by source, {city.name}-wide. Tap one to see its trend.

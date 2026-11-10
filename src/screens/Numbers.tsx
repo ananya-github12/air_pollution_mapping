@@ -4,7 +4,8 @@ import ShareButton from '../components/ShareButton'
 import { CountUp } from '../components/Counter'
 import { CITIES } from '../config/cities'
 import { loadAirToday, type AirToday } from '../lib/data'
-import { aqiCategory, compass, extremeWindow, formatHourRange, mean, naqi, WHO_PM25_DAILY } from '../lib/aqi'
+import { aqiCategory, clockHour, compass, extremeWindow, formatHourRange, hourText, mean, naqi, WHO_PM25_DAILY } from '../lib/aqi'
+import { loadMeta, type DataMeta } from '../lib/data'
 import { placePhrase, placeTitle, type Place } from '../lib/geo'
 
 interface Props {
@@ -21,8 +22,11 @@ export default function Numbers({ place, onRestart }: Props) {
   const [failed, setFailed] = useState(false)
   const city = CITIES[place.city]
 
+  const [meta, setMeta] = useState<DataMeta | null>(null)
+
   useEffect(() => {
     loadAirToday(place.city).then(setAir, () => setFailed(true))
+    loadMeta().then(setMeta)
   }, [place.city])
 
   const stats = useMemo(() => {
@@ -104,14 +108,14 @@ export default function Numbers({ place, onRestart }: Props) {
             <div className="mt-4 grid grid-cols-2 gap-2">
               <Tile delay={d(0.45)} label="PM2.5" value={<><CountUp value={stats.pm25} delay={0.45} duration={1} /> <Unit /></>} sub={`${stats.whoTimes}× the WHO daily guideline`} />
               <Tile delay={d(0.55)} label="PM10" value={<><CountUp value={stats.pm10} delay={0.55} duration={1} /> <Unit /></>} sub="coarser dust & smoke" />
-              <Tile delay={d(0.65)} label="Cleanest air" value={formatHourRange(stats.best, WINDOW_H)} sub="best time to step out" accent="#86efac" />
-              <Tile delay={d(0.75)} label="Haziest air" value={formatHourRange(stats.worst, WINDOW_H)} sub="good time to stay in" accent="#fdba74" />
+              <Tile delay={d(0.65)} label="Cleanest air" value={formatHourRange(clockHour(air.startHour, stats.best), WINDOW_H)} sub="best time to step out" accent="#86efac" />
+              <Tile delay={d(0.75)} label="Haziest air" value={formatHourRange(clockHour(air.startHour, stats.worst), WINDOW_H)} sub="good time to stay in" accent="#fdba74" />
             </div>
 
             {/* 24-hour strip */}
             <motion.div className="mt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: d(0.85) }}>
               <div className="flex items-baseline justify-between text-[11px] text-white/50">
-                <span>PM2.5 through the day</span>
+                <span>PM2.5, last 24 hours</span>
                 <span>
                   Wind {air.windKmh} km/h from the {compass(air.windFrom)}
                 </span>
@@ -137,12 +141,11 @@ export default function Numbers({ place, onRestart }: Props) {
                 })}
               </div>
               <div className="mt-1 flex justify-between text-[10px] text-white/35">
-                <span>12 am</span>
-                <span>6 am</span>
-                <span>12 pm</span>
-                <span>6 pm</span>
-                <span>12 am</span>
+                {[0, 6, 12, 18, 23].map((i) => (
+                  <span key={i}>{i === 23 ? 'now' : hourText(clockHour(air.startHour, i))}</span>
+                ))}
               </div>
+              <p className="mt-2 text-[10px] leading-snug text-white/40">{air.source}</p>
             </motion.div>
           </>
         )}
@@ -162,6 +165,7 @@ export default function Numbers({ place, onRestart }: Props) {
 
       <p className="mt-3 max-w-[20rem] text-center text-[11px] leading-snug text-white/45">
         {city.name}-wide hourly averages, not a reading at your street.
+        {meta && meta.attribution.length > 0 && <span className="mt-1 block text-white/35">{meta.attribution.join(' · ')}</span>}
       </p>
     </div>
   )

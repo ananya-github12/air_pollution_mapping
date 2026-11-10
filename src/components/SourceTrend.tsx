@@ -4,7 +4,7 @@ import Sheet from './Sheet'
 import LineChart from './LineChart'
 import { SOURCE_LOOK } from '../config/sources'
 import { CITIES, type CityId } from '../config/cities'
-import { loadHistory, type SourceHistory, type SourceShare } from '../lib/data'
+import { DATA_MODE, loadHistory, sourcesAreSample, type SourceHistory, type SourceShare } from '../lib/data'
 import { mean } from '../lib/aqi'
 
 type Range = '1D' | '7D' | '30D'
@@ -78,9 +78,11 @@ export default function SourceTrend({ source, city, onClose }: Props) {
   const [range, setRange] = useState<Range>('7D')
   const [history, setHistory] = useState<SourceHistory | null>(null)
   const [failed, setFailed] = useState(false)
+  const [sample, setSample] = useState(DATA_MODE === 'mock')
 
   useEffect(() => {
     if (source) loadHistory(city).then(setHistory, () => setFailed(true))
+    if (source && DATA_MODE === 'live') sourcesAreSample().then(setSample)
   }, [source, city])
 
   const s = useMemo(() => (history && source ? series(history, source.id, range) : null), [history, source, range])
@@ -173,6 +175,7 @@ export default function SourceTrend({ source, city, onClose }: Props) {
                 Peak: <span className="font-medium text-[#f0efec] tabular-nums">{Math.round(s.values[peakIdx])} µg/m³</span> · {s.labelAt(peakIdx)}
               </p>
               <p className="mt-3 text-[11px] leading-snug text-white/40">
+                {sample && <span className="font-medium text-amber-100/70">Sample trend for illustration, not real data. </span>}
                 Touch and drag the chart to read values. City-wide model estimates of how much of the PM2.5 in the air comes from this source, not emissions measured at the source.
               </p>
 

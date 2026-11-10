@@ -73,6 +73,15 @@ function hourLabel(h: number): { n: number; ap: string } {
   return { n: hh % 12 === 0 ? 12 : hh % 12, ap: hh < 12 ? 'am' : 'pm' }
 }
 
+/** Clock hour (0–23) of hourly index i in a series that starts at clock hour `startHour`. */
+export const clockHour = (startHour: number, i: number) => (startHour + i) % 24
+
+/** "6 am" style label for a clock hour. */
+export function hourText(h: number): string {
+  const { n, ap } = hourLabel(h)
+  return `${n} ${ap}`
+}
+
 /** e.g. formatHourRange(14, 3) → "2–5 pm", formatHourRange(10, 3) → "10 am–1 pm" */
 export function formatHourRange(start: number, width: number): string {
   const a = hourLabel(start)

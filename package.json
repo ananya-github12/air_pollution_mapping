@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "mock-data": "node scripts/make-mock-history.mjs && node scripts/make-mock-trace.mjs",
-    "test": "node --test 'tests/*.test.ts'"
+    "test": "node --test 'tests/*.test.ts'",
+    "fetch-data": "node --env-file-if-exists=.env scripts/fetch-data.ts"
   },
   "dependencies": {
     "framer-motion": "^14.12.0",

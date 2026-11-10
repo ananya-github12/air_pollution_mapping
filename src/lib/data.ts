@@ -21,6 +21,7 @@ export interface SourceShare {
 }
 
 interface SourcesFile {
+  sample?: boolean
   pollutant: string
   updatedAt: string
   cities: Record<CityId, SourceShare[]>
@@ -28,26 +29,41 @@ interface SourcesFile {
 
 let sourcesPromise: Promise<SourcesFile> | undefined
 
-/** Estimated city-wide source shares. Fetched once and cached. */
-export async function loadSources(city: CityId): Promise<SourceShare[]> {
+/** True when the source shares / trends are sample numbers rather than real estimates. */
+export async function sourcesAreSample(): Promise<boolean> {
+  if (DATA_MODE === 'mock') return true
+  try {
+    return !!(await loadSourcesFile()).sample
+  } catch {
+    return true
+  }
+}
+
+function loadSourcesFile(): Promise<SourcesFile> {
   sourcesPromise ??= fetch(`${DATA_BASE}/sources.json`).then((r) => {
     if (!r.ok) throw new Error(`sources.json: ${r.status}`)
     return r.json()
   })
-  const file = await sourcesPromise
+  return sourcesPromise
+}
+
+/** Estimated city-wide source shares. Fetched once and cached. */
+export async function loadSources(city: CityId): Promise<SourceShare[]> {
+  const file = await loadSourcesFile()
   // Biggest first, but "Everything else" always last.
   return [...file.cities[city]].sort((a, b) => (a.id === 'other' ? 1 : b.id === 'other' ? -1 : b.share - a.share))
 }
 
 export interface AirToday {
-  pm25: number[] // hourly, µg/m³, hours 0–23 local time
+  pm25: number[] // 24 hourly values, µg/m³, oldest first
   pm10: number[]
+  startHour: number // IST clock hour (0–23) of the first value
   windKmh: number
   windFrom: number // meteorological bearing, degrees
+  source: string // e.g. "Measured: average of 38 monitoring stations…" or "CAMS model…"
 }
 
 interface AirTodayFile {
-  date: string
   cities: Record<CityId, AirToday>
 }
 
@@ -109,4 +125,22 @@ export function loadTraceData(): Promise<TraceData> {
       throw err
     })
   return traceDataPromise
+}
+
+// ---- Data credits (live mode) ---------------------------------------------------------------
+
+export interface DataMeta {
+  fetchedAt: string
+  attribution: string[]
+}
+
+/** Who to credit for the live data, as the providers' licences require. Null in mock mode. */
+export async function loadMeta(): Promise<DataMeta | null> {
+  if (DATA_MODE === 'mock') return null
+  try {
+    const r = await fetch(`${DATA_BASE}/meta.json`)
+    return r.ok ? r.json() : null
+  } catch {
+    return null
+  }
 }
