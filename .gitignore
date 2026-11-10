@@ -28,3 +28,7 @@ dist-ssr
 
 # Live data snapshots are generated locally by `npm run fetch-data` (not committed for now)
 public/data/live/*.json
+
+# Never commit key files, whatever they are called
+*.env
+!.env.example
