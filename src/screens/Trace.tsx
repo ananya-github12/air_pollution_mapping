@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type * as maplibregl from 'maplibre-gl'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import Counter from '../components/Counter'
-import type { Place } from '../lib/geo'
+import { placePhrase, placeTitle, type Place } from '../lib/geo'
 
 interface Props {
   map: maplibregl.Map | null
@@ -47,7 +47,7 @@ export default function Trace({ map, place, onNext }: Props) {
               animate={{ opacity: 1, y: 0 }}
             >
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-300" />
-              Following the air in {place.label} back in time…
+              Following the air {placePhrase(place)} back in time…
             </motion.p>
 
             <div className="mt-auto mb-[calc(env(safe-area-inset-bottom)+1.5rem)] w-full">
@@ -71,9 +71,9 @@ export default function Trace({ map, place, onNext }: Props) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: 'spring', damping: 22, stiffness: 200 }}
             >
-              <p className="text-[11px] uppercase tracking-[0.16em] text-amber-200/70">The last 48 hours</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-amber-200/70">📍 {placeTitle(place)} · last 48 h</p>
               <h2 className="mt-1.5 text-xl font-semibold leading-snug text-white">
-                The air in {place.label} today travelled <span className="text-amber-300">— km</span> and passed{' '}
+                The air {placePhrase(place)} today travelled <span className="text-amber-300">— km</span> and passed{' '}
                 <span className="text-amber-300">— fires</span> before reaching you.
               </h2>
 

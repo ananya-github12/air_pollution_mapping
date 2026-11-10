@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Question from './screens/Question'
 import Trace from './screens/Trace'
 import WhatsInIt from './screens/WhatsInIt'
+import Numbers from './screens/Numbers'
 import SampleBadge from './components/SampleBadge'
 import AirParticles from './components/AirParticles'
 import { CITIES, findArea } from './config/cities'
@@ -12,7 +13,7 @@ import { placeFromArea, type Place } from './lib/geo'
 // The map bundle is large; load it after the headline has painted.
 const MapView = lazy(() => import('./components/Map'))
 
-type Screen = 'question' | 'trace' | 'inside'
+type Screen = 'question' | 'trace' | 'inside' | 'numbers'
 
 // Deep link: /?area=aliganj lands straight on the trace.
 function initialPlace(): Place | null {
@@ -69,7 +70,8 @@ export default function App() {
           >
             {screen === 'question' && <Question map={map} onPick={pick} />}
             {screen === 'trace' && place && <Trace map={map} place={place} onNext={() => setScreen('inside')} />}
-            {screen === 'inside' && place && <WhatsInIt map={map} place={place} onRestart={restart} />}
+            {screen === 'inside' && place && <WhatsInIt map={map} place={place} onNext={() => setScreen('numbers')} />}
+            {screen === 'numbers' && place && <Numbers place={place} onRestart={restart} />}
           </motion.div>
         </AnimatePresence>
       </div>

@@ -36,3 +36,26 @@ export async function loadSources(city: CityId): Promise<SourceShare[]> {
   // Biggest first, but "Everything else" always last.
   return [...file.cities[city]].sort((a, b) => (a.id === 'other' ? 1 : b.id === 'other' ? -1 : b.share - a.share))
 }
+
+export interface AirToday {
+  pm25: number[] // hourly, µg/m³, hours 0–23 local time
+  pm10: number[]
+  windKmh: number
+  windFrom: number // meteorological bearing, degrees
+}
+
+interface AirTodayFile {
+  date: string
+  cities: Record<CityId, AirToday>
+}
+
+let airTodayPromise: Promise<AirTodayFile> | undefined
+
+/** Today's hourly air for a city. Fetched once and cached. */
+export async function loadAirToday(city: CityId): Promise<AirToday> {
+  airTodayPromise ??= fetch(`${DATA_BASE}/airtoday.json`).then((r) => {
+    if (!r.ok) throw new Error(`airtoday.json: ${r.status}`)
+    return r.json()
+  })
+  return (await airTodayPromise).cities[city]
+}

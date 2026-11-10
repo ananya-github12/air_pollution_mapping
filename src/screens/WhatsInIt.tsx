@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react'
 import type * as maplibregl from 'maplibre-gl'
 import { motion, useReducedMotion } from 'framer-motion'
-import ShareButton from '../components/ShareButton'
 import { CountUp } from '../components/Counter'
 import { CITIES } from '../config/cities'
 import { loadSources, type SourceId, type SourceShare } from '../lib/data'
-import type { Place } from '../lib/geo'
+import { placePhrase, placeTitle, type Place } from '../lib/geo'
 
 interface Props {
   map: maplibregl.Map | null
   place: Place
-  onRestart: () => void
+  onNext: () => void
 }
 
 // Calm, friendly palette: informative, not alarming.
@@ -25,7 +24,7 @@ const LOOK: Record<SourceId, { icon: string; color: string }> = {
 }
 
 /** Screen 3: what's in the air, as estimated city-wide source shares. */
-export default function WhatsInIt({ map, place, onRestart }: Props) {
+export default function WhatsInIt({ map, place, onNext }: Props) {
   const reduced = useReducedMotion()
   const [sources, setSources] = useState<SourceShare[] | null>(null)
   const [failed, setFailed] = useState(false)
@@ -51,9 +50,9 @@ export default function WhatsInIt({ map, place, onRestart }: Props) {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: 'spring', damping: 22, stiffness: 200 }}
       >
-        <p className="text-[11px] uppercase tracking-[0.16em] text-amber-200/70">What’s in it</p>
-        <h2 className="mt-1.5 text-xl font-semibold leading-snug text-white">The air in {place.label} today</h2>
-        <p className="mt-1 text-xs text-white/55">Estimated share of {city.name}’s PM2.5 by source</p>
+        <p className="text-[11px] uppercase tracking-[0.16em] text-amber-200/70">📍 {placeTitle(place)} · what’s in it</p>
+        <h2 className="mt-1.5 text-xl font-semibold leading-snug text-white">What’s in the air {placePhrase(place)}?</h2>
+        <p className="mt-1 text-xs text-white/55">Estimated share of PM2.5 by source, {city.name}-wide today</p>
 
         <ul className="mt-4 flex flex-col gap-2.5">
           {failed && <li className="text-sm text-white/60">Couldn’t load today’s numbers. Try again in a bit.</li>}
@@ -108,10 +107,9 @@ export default function WhatsInIt({ map, place, onRestart }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: reduced ? 0 : 1.0 }}
         >
-          <ShareButton onClick={() => alert('Sharing arrives in the Share milestone.')} />
-          <button onClick={onRestart} className="py-2 text-sm text-white/60 underline-offset-4 active:underline">
-            Trace another spot
-          </button>
+          <motion.button onClick={onNext} className="cta w-full" whileTap={{ scale: 0.97 }}>
+            See today’s numbers →
+          </motion.button>
         </motion.div>
       </motion.div>
 

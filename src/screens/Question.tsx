@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type * as maplibregl from 'maplibre-gl'
-import { AnimatePresence, motion } from 'framer-motion'
-import { CITIES } from '../config/cities'
+import { motion } from 'framer-motion'
+import AreaPicker from '../components/AreaPicker'
 import { placeFromArea, placeFromPoint, type Place } from '../lib/geo'
 
 type Status = 'idle' | 'locating' | 'denied' | 'outside'
@@ -14,14 +14,21 @@ interface Props {
 const NOTICE: Record<Status, string | null> = {
   idle: null,
   locating: null,
-  denied: "Couldn't find you. Pick a spot instead:",
-  outside: 'Only Lucknow and Delhi for now. Pick a spot:',
+  denied: 'We couldn’t get your location. Pick your area instead.',
+  outside: 'You seem to be outside Lucknow and Delhi. Pick an area to explore.',
 }
 
 const HEADLINE = ['What', 'air', 'are', 'you', 'breathing?']
 
 export default function Question({ map, onPick }: Props) {
   const [status, setStatus] = useState<Status>('idle')
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  // Location unavailable or outside our cities: offer the area list straight away.
+  function fallBack(reason: 'denied' | 'outside') {
+    setStatus(reason)
+    setPickerOpen(true)
+  }
 
   // Tap anywhere on the map to pick a point.
   useEffect(() => {
@@ -29,7 +36,7 @@ export default function Question({ map, onPick }: Props) {
     const handler = (e: maplibregl.MapMouseEvent) => {
       const place = placeFromPoint(e.lngLat.lat, e.lngLat.lng)
       if (place) onPick(place)
-      else setStatus('outside')
+      else fallBack('outside')
     }
     map.on('click', handler)
     return () => {
@@ -38,15 +45,15 @@ export default function Question({ map, onPick }: Props) {
   }, [map, onPick])
 
   function traceMyAir() {
-    if (!('geolocation' in navigator)) return setStatus('denied')
+    if (!('geolocation' in navigator)) return fallBack('denied')
     setStatus('locating')
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const place = placeFromPoint(pos.coords.latitude, pos.coords.longitude)
         if (place) onPick(place)
-        else setStatus('outside')
+        else fallBack('outside')
       },
-      () => setStatus('denied'),
+      () => fallBack('denied'),
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 10 * 60 * 1000 },
     )
   }
@@ -104,47 +111,35 @@ export default function Question({ map, onPick }: Props) {
         {status === 'locating' ? 'Finding you…' : 'Trace my air'}
       </motion.button>
 
+      <motion.button
+        onClick={() => setPickerOpen(true)}
+        className="mt-3 rounded-full border border-white/15 bg-white/[0.06] px-5 py-2.5 text-sm font-medium text-white/85 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.0 }}
+        whileTap={{ scale: 0.96 }}
+      >
+        Choose my area instead
+      </motion.button>
+
       <motion.p
-        className="mt-3 text-xs text-white/45"
+        className="mt-3 text-xs text-white/40"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.1 }}
       >
-        or tap anywhere on the map
+        {notice ?? 'or tap your spot on the map'}
       </motion.p>
 
-      <AnimatePresence>
-        {notice && (
-          <motion.div
-            className="mt-6 w-full"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-          >
-            <p className="mb-3 text-sm text-white/70">{notice}</p>
-            {Object.values(CITIES).map((city) => (
-              <div key={city.id} className="mb-3">
-                <p className="mb-1.5 text-[10px] uppercase tracking-[0.16em] text-white/40">{city.name}</p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {city.areas.map((area, i) => (
-                    <motion.button
-                      key={area.id}
-                      onClick={() => onPick(placeFromArea(area))}
-                      className="rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-2 text-sm text-white/90 backdrop-blur-sm active:bg-white/15"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.05 * i }}
-                      whileTap={{ scale: 0.94 }}
-                    >
-                      {area.name}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AreaPicker
+        open={pickerOpen}
+        notice={notice}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(area) => {
+          setPickerOpen(false)
+          onPick(placeFromArea(area))
+        }}
+      />
     </div>
   )
 }
