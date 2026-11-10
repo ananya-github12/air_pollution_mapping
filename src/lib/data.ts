@@ -1,4 +1,6 @@
 import type { CityId } from '../config/cities'
+import { gridFromRaw, type RawWindGrid, type WindGrid } from './trajectory.ts'
+import type { Fire } from './stats.ts'
 
 /**
  * Where the app reads its data from. Phase 1 uses hand-crafted samples in public/data/mock/;
@@ -74,4 +76,37 @@ export async function loadHistory(city: CityId): Promise<SourceHistory> {
     return r.json()
   })
   return (await historyPromise).cities[city]
+}
+
+// ---- Trace inputs: wind grid + fire hotspots ------------------------------------------------
+
+export interface TraceData {
+  grid: WindGrid
+  fires: Fire[]
+}
+
+interface FireRow {
+  lat: number
+  lon: number
+  detectedAt: string
+  confidence: string
+}
+
+let traceDataPromise: Promise<TraceData> | undefined
+
+/** Wind grid and fire detections for the last 48 h. Fetched once and cached; retried after a failure. */
+export function loadTraceData(): Promise<TraceData> {
+  traceDataPromise ??= Promise.all([
+    fetch(`${DATA_BASE}/wind.json`).then((r) => (r.ok ? (r.json() as Promise<RawWindGrid>) : Promise.reject(new Error(`wind.json: ${r.status}`)))),
+    fetch(`${DATA_BASE}/fires.json`).then((r) => (r.ok ? (r.json() as Promise<FireRow[]>) : Promise.reject(new Error(`fires.json: ${r.status}`)))),
+  ])
+    .then(([wind, fires]) => ({
+      grid: gridFromRaw(wind),
+      fires: fires.map((f) => ({ lat: f.lat, lon: f.lon, t: Date.parse(f.detectedAt), confidence: f.confidence })),
+    }))
+    .catch((err) => {
+      traceDataPromise = undefined
+      throw err
+    })
+  return traceDataPromise
 }

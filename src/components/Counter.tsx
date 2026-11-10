@@ -39,10 +39,10 @@ export function CountUp({ value, duration = 0.6, delay = 0, suffix = '', classNa
 }
 
 /** Big number with a small label underneath, used for the live trace stats. */
-export default function Counter({ value, label }: { value: number; label: string }) {
+export default function Counter({ value, label, duration = 0.6 }: { value: number; label: string; duration?: number }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center text-center">
-      <CountUp value={value} className="text-2xl font-semibold tracking-tight text-amber-100" />
+      <CountUp value={value} duration={duration} className="text-2xl font-semibold tracking-tight text-amber-100" />
       <span className="mt-1 text-[10px] uppercase leading-tight tracking-[0.1em] text-white/50">{label}</span>
     </div>
   )

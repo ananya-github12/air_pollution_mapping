@@ -9,6 +9,7 @@ import SampleBadge from './components/SampleBadge'
 import AirParticles from './components/AirParticles'
 import { CITIES, findArea } from './config/cities'
 import { placeFromArea, type Place } from './lib/geo'
+import type { TraceStats } from './lib/stats'
 
 // The map bundle is large; load it after the headline has painted.
 const MapView = lazy(() => import('./components/Map'))
@@ -25,9 +26,11 @@ export default function App() {
   const [place, setPlace] = useState<Place | null>(initialPlace)
   const [screen, setScreen] = useState<Screen>(() => (place ? 'trace' : 'question'))
   const [map, setMap] = useState<maplibregl.Map | null>(null)
+  const [traceStats, setTraceStats] = useState<TraceStats | null>(null)
 
   const pick = useCallback((p: Place) => {
     setPlace(p)
+    setTraceStats(null)
     setScreen('trace')
   }, [])
 
@@ -69,8 +72,8 @@ export default function App() {
             transition={{ duration: 0.45 }}
           >
             {screen === 'question' && <Question map={map} onPick={pick} />}
-            {screen === 'trace' && place && <Trace map={map} place={place} onNext={() => setScreen('inside')} />}
-            {screen === 'inside' && place && <WhatsInIt map={map} place={place} onNext={() => setScreen('numbers')} />}
+            {screen === 'trace' && place && <Trace map={map} place={place} onStats={setTraceStats} onNext={() => setScreen('inside')} />}
+            {screen === 'inside' && place && <WhatsInIt map={map} place={place} firesPassed={traceStats?.fires ?? null} onNext={() => setScreen('numbers')} />}
             {screen === 'numbers' && place && <Numbers place={place} onRestart={restart} />}
           </motion.div>
         </AnimatePresence>

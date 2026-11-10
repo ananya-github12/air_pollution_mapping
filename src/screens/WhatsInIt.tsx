@@ -12,11 +12,13 @@ import { placePhrase, placeTitle, type Place } from '../lib/geo'
 interface Props {
   map: maplibregl.Map | null
   place: Place
+  /** How many fires the traced air passed, to call out on the fires row. */
+  firesPassed: number | null
   onNext: () => void
 }
 
 /** Screen 3: what's in the air, as estimated city-wide source shares. */
-export default function WhatsInIt({ map, place, onNext }: Props) {
+export default function WhatsInIt({ map, place, firesPassed, onNext }: Props) {
   const reduced = useReducedMotion()
   const [sources, setSources] = useState<SourceShare[] | null>(null)
   const [failed, setFailed] = useState(false)
@@ -101,6 +103,9 @@ export default function WhatsInIt({ map, place, onNext }: Props) {
                       transition={{ delay: reduced ? 0 : 0.3 + i * 0.09, duration: reduced ? 0 : 0.9, ease: [0.22, 1, 0.36, 1] }}
                     />
                   </div>
+                  {s.id === 'crop-fires' && firesPassed ? (
+                    <p className="mt-1 text-[11px] leading-tight text-[#f0efec]/70">Your air passed {firesPassed} fires on its way here</p>
+                  ) : null}
                 </div>
                 <span className="text-white/30" aria-hidden>
                   ›
