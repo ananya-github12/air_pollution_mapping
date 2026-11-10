@@ -1,0 +1,12 @@
+# Offline ML pipeline (not part of the website). Install with:
+#   python3 -m venv ml/.venv && ml/.venv/bin/pip install -r ml/requirements.txt
+numpy>=2.1
+pandas>=2.2
+pyarrow>=17        # fast local storage of the downloaded history (Parquet)
+requests>=2.32     # API calls (OpenAQ, FIRMS, Open-Meteo)
+python-dotenv>=1.0 # reads keys from .env
+scikit-learn>=1.5  # baselines, metrics, time-based cross-validation
+lightgbm>=4.5      # gradient-boosted trees; quantile models give prediction ranges
+pymc>=5.18         # Bayesian source model (ranges / credible intervals per source)
+arviz>=0.20        # diagnostics and summaries for the Bayesian model
+matplotlib>=3.9    # charts for checking the model

@@ -32,3 +32,8 @@ public/data/live/*.json
 # Never commit key files, whatever they are called
 *.env
 !.env.example
+
+# Python ML environment and downloaded training data
+ml/.venv/
+ml/data/
+__pycache__/
