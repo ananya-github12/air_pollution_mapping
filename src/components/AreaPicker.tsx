@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import Sheet from './Sheet'
 import { CITIES, type Area } from '../config/cities'
 
 interface Props {
@@ -25,27 +25,8 @@ export default function AreaPicker({ open, notice, onClose, onSelect }: Props) {
   }, [query])
 
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div
-            className="pointer-events-auto fixed inset-0 z-40 bg-black/50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
-          <motion.div
-            role="dialog"
-            aria-label="Choose your area"
-            className="pointer-events-auto fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[78dvh] w-full max-w-[430px] flex-col rounded-t-3xl border-t border-white/10 bg-neutral-900/95 pb-[env(safe-area-inset-bottom)] text-left backdrop-blur"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-          >
+    <Sheet open={open} onClose={onClose} label="Choose your area">
             <div className="px-5 pt-3">
-              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-white">Choose your area</h3>
                 <button onClick={onClose} className="-mr-2 px-2 py-1 text-sm text-white/50" aria-label="Close">
@@ -89,9 +70,6 @@ export default function AreaPicker({ open, notice, onClose, onSelect }: Props) {
                 </div>
               ))}
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+    </Sheet>
   )
 }

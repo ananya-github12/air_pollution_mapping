@@ -59,3 +59,19 @@ export async function loadAirToday(city: CityId): Promise<AirToday> {
   })
   return (await airTodayPromise).cities[city]
 }
+
+export interface SourceHistory {
+  daily: { start: string; values: Record<SourceId, number[]> } // one value per day, oldest first
+  hourly: { start: string; values: Record<SourceId, number[]> } // one value per hour, oldest first
+}
+
+let historyPromise: Promise<{ cities: Record<CityId, SourceHistory> }> | undefined
+
+/** Estimated contribution to PM2.5 (µg/m³) by source over time. Fetched once and cached. */
+export async function loadHistory(city: CityId): Promise<SourceHistory> {
+  historyPromise ??= fetch(`${DATA_BASE}/history.json`).then((r) => {
+    if (!r.ok) throw new Error(`history.json: ${r.status}`)
+    return r.json()
+  })
+  return (await historyPromise).cities[city]
+}

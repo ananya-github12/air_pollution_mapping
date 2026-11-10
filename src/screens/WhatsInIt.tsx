@@ -3,7 +3,10 @@ import type * as maplibregl from 'maplibre-gl'
 import { motion, useReducedMotion } from 'framer-motion'
 import { CountUp } from '../components/Counter'
 import { CITIES } from '../config/cities'
-import { loadSources, type SourceId, type SourceShare } from '../lib/data'
+import { loadAirToday, loadSources, type SourceShare } from '../lib/data'
+import { SOURCE_LOOK } from '../config/sources'
+import { mean } from '../lib/aqi'
+import SourceTrend from '../components/SourceTrend'
 import { placePhrase, placeTitle, type Place } from '../lib/geo'
 
 interface Props {
@@ -12,26 +15,18 @@ interface Props {
   onNext: () => void
 }
 
-// Calm, friendly palette: informative, not alarming.
-const LOOK: Record<SourceId, { icon: string; color: string }> = {
-  'crop-fires': { icon: '🔥', color: '#fbbf24' },
-  vehicles: { icon: '🚗', color: '#7dd3fc' },
-  dust: { icon: '🏗️', color: '#d6c7a1' },
-  industry: { icon: '🏭', color: '#c4b5fd' },
-  firecrackers: { icon: '🎆', color: '#f9a8d4' },
-  household: { icon: '🍂', color: '#fdba74' },
-  other: { icon: '🌫️', color: '#a1a1aa' },
-}
-
 /** Screen 3: what's in the air, as estimated city-wide source shares. */
 export default function WhatsInIt({ map, place, onNext }: Props) {
   const reduced = useReducedMotion()
   const [sources, setSources] = useState<SourceShare[] | null>(null)
   const [failed, setFailed] = useState(false)
+  const [pm25, setPm25] = useState<number | null>(null)
+  const [selected, setSelected] = useState<SourceShare | null>(null)
   const city = CITIES[place.city]
 
   useEffect(() => {
     loadSources(place.city).then(setSources, () => setFailed(true))
+    loadAirToday(place.city).then((a) => setPm25(Math.round(mean(a.pm25))), () => {})
   }, [place.city])
 
   // Settle the camera back over the city, behind the card.
@@ -52,9 +47,16 @@ export default function WhatsInIt({ map, place, onNext }: Props) {
       >
         <p className="text-[11px] uppercase tracking-[0.16em] text-amber-200/70">📍 {placeTitle(place)} · what’s in it</p>
         <h2 className="mt-1.5 text-xl font-semibold leading-snug text-white">What’s in the air {placePhrase(place)}?</h2>
-        <p className="mt-1 text-xs text-white/55">Estimated share of PM2.5 by source, {city.name}-wide today</p>
+        <p className="mt-1 text-xs text-white/55">
+          {pm25 !== null && (
+            <>
+              Today’s average PM2.5: <span className="font-semibold text-white/85 tabular-nums">{pm25} µg/m³</span>.{' '}
+            </>
+          )}
+          Estimated share by source, {city.name}-wide. Tap one to see its trend.
+        </p>
 
-        <ul className="mt-4 flex flex-col gap-2.5">
+        <ul className="mt-3 flex flex-col gap-1">
           {failed && <li className="text-sm text-white/60">Couldn’t load today’s numbers. Try again in a bit.</li>}
           {!sources && !failed && Array.from({ length: 7 }, (_, i) => <li key={i} className="h-8 animate-pulse rounded-lg bg-white/5" />)}
           {sources?.map((s, i) => (
@@ -64,16 +66,20 @@ export default function WhatsInIt({ map, place, onNext }: Props) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: reduced ? 0 : 0.25 + i * 0.09, duration: 0.4 }}
             >
-              <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setSelected(s)}
+                className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 rounded-xl px-2 py-1 text-left active:bg-white/[0.06]"
+                aria-label={`${s.label}, ${s.share}%. See trend`}
+              >
                 <motion.span
                   className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-base"
-                  style={{ background: `${LOOK[s.id].color}22` }}
+                  style={{ background: `${SOURCE_LOOK[s.id].color}22` }}
                   initial={{ scale: 0.4 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: reduced ? 0 : 0.3 + i * 0.09, type: 'spring', damping: 10, stiffness: 260 }}
                   aria-hidden
                 >
-                  {LOOK[s.id].icon}
+                  {SOURCE_LOOK[s.id].icon}
                 </motion.span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2 text-sm">
@@ -89,14 +95,17 @@ export default function WhatsInIt({ map, place, onNext }: Props) {
                   <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
                     <motion.div
                       className="h-full rounded-full"
-                      style={{ background: LOOK[s.id].color, originX: 0 }}
+                      style={{ background: SOURCE_LOOK[s.id].color, originX: 0 }}
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: s.share / max }}
                       transition={{ delay: reduced ? 0 : 0.3 + i * 0.09, duration: reduced ? 0 : 0.9, ease: [0.22, 1, 0.36, 1] }}
                     />
                   </div>
                 </div>
-              </div>
+                <span className="text-white/30" aria-hidden>
+                  ›
+                </span>
+              </button>
             </motion.li>
           ))}
         </ul>
@@ -112,6 +121,8 @@ export default function WhatsInIt({ map, place, onNext }: Props) {
           </motion.button>
         </motion.div>
       </motion.div>
+
+      <SourceTrend source={selected} city={place.city} onClose={() => setSelected(null)} />
 
       <p className="mt-3 max-w-[20rem] text-center text-[11px] leading-snug text-white/45">
         City-wide estimates from source-apportionment models, not measured at your street. Shares shift day to day.
