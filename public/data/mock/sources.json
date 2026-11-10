@@ -1,0 +1,24 @@
+{
+  "pollutant": "PM2.5",
+  "updatedAt": "2026-11-10T06:00:00+05:30",
+  "cities": {
+    "delhi": [
+      { "id": "crop-fires", "label": "Crop & forest fires", "share": 28 },
+      { "id": "vehicles", "label": "Vehicles", "share": 17 },
+      { "id": "dust", "label": "Road & construction dust", "share": 12 },
+      { "id": "industry", "label": "Industry & power", "share": 10 },
+      { "id": "firecrackers", "label": "Firecrackers", "share": 9 },
+      { "id": "household", "label": "Household & waste burning", "share": 8 },
+      { "id": "other", "label": "Everything else", "share": 16 }
+    ],
+    "lucknow": [
+      { "id": "vehicles", "label": "Vehicles", "share": 22 },
+      { "id": "dust", "label": "Road & construction dust", "share": 20 },
+      { "id": "crop-fires", "label": "Crop & forest fires", "share": 14 },
+      { "id": "household", "label": "Household & waste burning", "share": 13 },
+      { "id": "industry", "label": "Industry & power", "share": 9 },
+      { "id": "firecrackers", "label": "Firecrackers", "share": 7 },
+      { "id": "other", "label": "Everything else", "share": 15 }
+    ]
+  }
+}
