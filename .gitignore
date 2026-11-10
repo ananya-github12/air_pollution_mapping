@@ -25,3 +25,6 @@ dist-ssr
 
 .env
 .env.local
+
+# Live data snapshots are generated locally by `npm run fetch-data` (not committed for now)
+public/data/live/*.json
